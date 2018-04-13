@@ -1,0 +1,72 @@
+General Approach
+
+1. Find an existing scraper
+
+This seems like a logical solution. Why not find an API or open source
+project that a web app can leverage to scrape recipe data? It would be the
+least time-consuming. A point to consider is that API's can change, be
+removed, or fail to be upgraded over time. Any existing service may be limited
+or not free. Not only that, but we miss out on
+the opportunities to learn useful skills!
+
+One API I am familiar with from college:
+Spoonacular
+
+It provides a large database of recipes with useful metadata associated with
+them. The goods are already baked into a large stash. The only issue is that a
+developer needs to request permission to use the API, and the motive needs to
+be educational or government-related. Permission is granted for a year, and
+you must pay to use the API beyond that. This API exemplifies the
+disadvantages of relying on off-the-shelf solutions.
+
+2. Build a scraper from scratch
+
+This project comprises of different scraping prototypes that serve this
+approach. The obvious disadvantage is having to wrestle with the complexity of
+the task at hand. The reward is that we will not have to rely on external
+resources to utilize recipe scraping.
+
+Some approaches to consider:
+	1. HTML parsing
+	Idea- traverse the nested structure of HTML by looking for certain
+tags, tag names/attributes to identify the contents of the page.
+	Pros:
+		- takes advantage of the structure of the page
+		- very practical for parsing recipes from a certain website or
+		  user, given that the structure is consistent
+	Cons:
+		- inflexible. The HTML structure varies from website to
+		  website, and
+		  even among pages within the website. Not only that, but the
+		  implementation of the front-end of webpages themselves may
+		  change over time. If the scraper keys in on specific
+		  tags/attributes, it will not be able to adapt.
+
+	2. Regex/string-based parsing
+	Idea - identify certain patterns or keywords using a combination of
+	regex pattern matching and string-searching.
+	Pros:
+		- more robust to webpage formatting changes. It relies on
+		  finding certain keywords/patterns within the raw text rather
+		  than specific HTML tags.
+		- allows for more generic recipe scraping across multiple
+		  sources
+	Cons:
+		- Complex... way more complex. Regex is not simple. Not only
+		  that, but patterns that are too complex can lead to
+		  inflexibility.
+	3. Hybrid method
+	Idea - Use HTML parsing for popular websites where the structure
+	is consistent, and use a regex/string-searching parser in misc. cases 
+	Pros:
+		- takes advantage of reasonably reliable assumptions of input
+		  data. Traverses structure in cases where there is structure,
+		  tries to be generic otherwise.
+	Cons:
+		- Inflexibility still presents itself in the HTML parsing
+		  cases. BUT, I believe it's safe to assume that a cooking
+		  website will not mess around with it's recipe formatting.
+		  I don't think there's much incentive in restructuring a
+		  simple format consisting of background, ingredients, steps,
+		  nutritition data, etc.
+ 
