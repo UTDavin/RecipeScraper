@@ -4,7 +4,6 @@ import codecs
 from tkinter.filedialog import askopenfilename
 import urllib.request
 import re
-request = ""
 
 _unitDict = [
                 "ounce",
@@ -177,29 +176,52 @@ def __containsQuantity__(inputString):
         return True
     return False
 
-while request != "q":
+def getIngredients():
     request = input("Enter URL of recipe (or enter q to quit): ")
     if request == "q":
-        quit()
+        return None
     try:
         response = urllib.request.urlopen(request)
     except:
         print("something went wrong with request")
-        quit()
+        return None
     responsetext = response.read()
     soup = BeautifulSoup(responsetext, "html.parser")
     list1 = __ERSScrape__(soup)
     list2 = __ingrCSSScrape__(soup)
     list3 = __generalScrape__(soup)
-    print("Results of EasyRecipe scrape: ")
     if len(list1) > 0:
-        for item in list1:
-            print(item)
-    print("Results of CSS ingredients class scrape: ")
+        return list1
     if len(list2) > 0:
-        for item in list2:
-            print(item)
-    print("Results of Generic scrape: ")
+        return list2
     if len(list3) > 0:
-        for item in list3:
-            print(item)
+        return list3
+    return []
+
+def test():
+    while request != "q":
+        request = input("Enter URL of recipe (or enter q to quit): ")
+        if request == "q":
+            quit()
+        try:
+            response = urllib.request.urlopen(request)
+        except:
+            print("something went wrong with request")
+            quit()
+        responsetext = response.read()
+        soup = BeautifulSoup(responsetext, "html.parser")
+        list1 = __ERSScrape__(soup)
+        list2 = __ingrCSSScrape__(soup)
+        list3 = __generalScrape__(soup)
+        print("Results of EasyRecipe scrape: ")
+        if len(list1) > 0:
+            for item in list1:
+                print(item)
+        print("Results of CSS ingredients class scrape: ")
+        if len(list2) > 0:
+            for item in list2:
+                print(item)
+        print("Results of Generic scrape: ")
+        if len(list3) > 0:
+            for item in list3:
+                print(item)
