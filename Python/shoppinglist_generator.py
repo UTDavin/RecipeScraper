@@ -2,6 +2,7 @@ from Generic import web_recipescraper
 from IngredientProcessing import ingredient_processor
 #from IngredientCollator import ingredientcollator
 from enum import Enum
+import re
 
 class prgState(Enum):
     INIT = 0
@@ -12,11 +13,16 @@ class prgState(Enum):
 state = prgState.INIT
 ingredientList = []
 while True:
+    print()
 #1. scrape ingredients list from web
     if state == prgState.INIT:
         ingredientslist = web_recipescraper.getIngredients()
         if ingredientslist == None:
-            quit()
+            userInput = (input("Try again? [Y/N]: ")).lower()
+            if userInput == "y":
+                continue
+            else:
+                quit()
         elif len(ingredientslist) == 0:
             print("Sorry, could not obtain ingredients list!")
             continue
@@ -26,17 +32,33 @@ while True:
             continue
     elif state == prgState.OBTAINEDLIST:        
 #2. process ingredients from list
+        #TODO: add ingredient processor
         state = prgState.PROCESSEDLIST
         continue
     elif state == prgState.PROCESSEDLIST:
-        print(ingredientList)
-        userChoice = input("1. correct entry 2. add another recipe 3. make shopping list (or enter 'q' to quit): ")
-        if userChoice == 1 or userChoice == 2 or userChoice == 3:
-            print("valid choice %s" % userChoice)
-        elif userChoice == "q":
+        print("%s\n" % ingredientList)
+#3. display results of processing
+        userChoice = input("1=correct entry 2=add another recipe 3=make shopping list (or enter 'q' to quit): ")
+        if userChoice == "2":
+            state = prgState.INIT
+        elif userChoice == "1":
+            state = prgState.EDITINGLIST
+        elif userChoice == "3":
+            print("make shopping list (to be implemented")
+        elif userChoice.lower() == "q":
             quit()
         else:
             print("invalid choice")
-
-#3. display results of processing
-#   options: 1) correct entry 2) add another recipe 3) make shopping list
+    elif state == prgState.EDITINGLIST:
+        for c, value in enumerate(ingredientList, 0):
+            print(c, value)
+        print()
+        userInput = (input("'edit [entry number]'=edit specified entry 'return'=return to previous menu (or enter 'q' to quit): ")).lower()
+        mat = re.match("(edit\s(\d+))", userInput)
+        if mat:
+            print(ingredientList[int(mat.group(2))])
+        elif userInput == "return":
+            state = prgState.PROCESSEDLIST
+        elif userInput == "q":
+            quit()
+            
