@@ -32,7 +32,18 @@ while True:
             continue
     elif state == prgState.OBTAINEDLIST:        
 #2. process ingredients from list
-        #TODO: add ingredient processor
+        #TODO: refine ingredient processor
+        for ingred in ingredientList:
+            quantities = ingredient_processor.extractQuantities(ingred)
+            print("current ingredient: %s" % ingred)
+            for q in quantities:
+                print(q)
+            units = ingredient_processor.extractUnits(ingred)
+            for u in units:
+                print(u)
+            ingreds = ingredient_processor.extractIngredients(ingred)
+            for i in ingreds:
+                print(i)
         state = prgState.PROCESSEDLIST
         continue
     elif state == prgState.PROCESSEDLIST:
