@@ -5,7 +5,7 @@ _ingrDict = []
 _dp = re.compile('(?<!\/)\d+\.*\d*(?=[a-zA-Z]*(\s|[^\/]))') #decimal quantity identifier
 _fp = re.compile('(\d\s)*\d+\/\d+(?=\s)') #fractional quantity identifier. assumption - ingredients using fractional quantities put spacing between fraction and unit
 _dup = re.compile('(?<=\d|\s)([a-zA-Z]+)') #unit (optionally preceded by decimal) identifier
-_wp = re.compile('(?:(?<=^)|(?<=\s))([a-zA-Z]+)(?=[^a-zA-Z]|$)') #alphabetic word identifier
+_wp = re.compile('(?:(?<=^)|(?<=\s))([a-zA-Z\s]+)(?=[^a-zA-Z]|$)') #alphabetic word identifier
 
 with open('units.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
@@ -16,7 +16,7 @@ with open('ingredients.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         _ingrDict.append(row['ingredient'])
-        
+    _ingrDict.sort(key=len, reverse=True)        
 # Purpose: process a listed ingredient into subset of primarily three pieces of data: ingredient, quantity, unit
 # Possibly categorize rest of listed item as "miscellaneous"
 # 
@@ -99,17 +99,25 @@ def extractQuantities(inputString):
     return quantities_list
 
 def extractUnits(inputString):
+    inputString = inputString.lower()
     units_list = []
     dupmat = _dup.finditer(inputString)
     for m in dupmat:
-        if m.group() in _unitDict:
+        if m.group().lower() in _unitDict:
             units_list.append(m)
     return units_list
 
 def extractIngredients(inputString):
+    inputString = inputString.lower()
     ingred_list = []
-    ingredmat = _wp.finditer(inputString)
-    for m in ingredmat:
-        if m.group() in _ingrDict:
-            ingred_list.append(m)
+    for ingred in _ingrDict:
+        pattern = r"\b" + ingred + r"\b"
+        im = re.finditer(pattern, inputString)
+        for imat in im:
+            if imat:
+                repl = ""
+                for i in range(imat.start(), imat.end()):
+                    repl += "_"
+                inputString = inputString[:imat.start()] + repl + inputString[imat.end():]
+                ingred_list.append(imat)
     return ingred_list
