@@ -1,11 +1,50 @@
 import csv
 import re
+import operator
+from enum import Enum
+import unicodedata
+import fractions
+from pint import UnitRegistry
+
+ureg = UnitRegistry()
 _unitDict = []
 _ingrDict = []
 _dp = re.compile('(?<!\/)\d+\.*\d*(?=[a-zA-Z]*(\s|[^\/]))') #decimal quantity identifier
 _fp = re.compile('(\d\s)*\d+\/\d+(?=\s)') #fractional quantity identifier. assumption - ingredients using fractional quantities put spacing between fraction and unit
 _dup = re.compile('(?<=\d|\s)([a-zA-Z]+)') #unit (optionally preceded by decimal) identifier
 _wp = re.compile('(?:(?<=^)|(?<=\s))([a-zA-Z\s]+)(?=[^a-zA-Z]|$)') #alphabetic word identifier
+
+class TokenType(Enum):
+    QTY = 0
+    UNIT = 1
+    INGR = 2
+    CONJ = 3
+
+class Token:
+    def __init__(self, tokentype, value, start, end):
+        self.tokentype = tokentype
+        self.value = value
+        self.start = start
+        self.end = end
+    def __str__(self):
+        return "string: %s tokentype: %s position: (%s,%s)" % (self.string, self.tokentype.name, self.start, self.end) 
+    def __repr__(self):
+        return "string: %s tokentype: %s position: (%s,%s)" % (self.string, self.tokentype.name, self.start, self.end) 
+
+class Ingredient:
+    def __init__(self, _string, ingredient=None, quantity=None, unit=None):
+        self._string = _string
+        self.ingredient = ingredient
+        self.quantity = quantity
+        self.unit = unit
+    def __add__(self, another):
+        if self.ingredient != another.ingredient:
+            return self
+        return Ingredient(self.ingredient, self.quantity * ureg(self.unit) + another.quantity * ureg(another.unit), self.unit)
+    def __str__(self):
+        return "string: %s\ningredient: %s quantity: %s unit: %s\n" % (self._string, self.ingredient, self.quantity, self.unit)
+    def __repr__(self):
+        return "string: %s\ningredient: %s quantity: %s unit: %s\n" % (self._string, self.ingredient, self.quantity, self.unit)
 
 with open('units.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
@@ -17,6 +56,7 @@ with open('ingredients.csv', newline='') as csvfile:
     for row in reader:
         _ingrDict.append(row['ingredient'])
     _ingrDict.sort(key=len, reverse=True)        
+
 # Purpose: process a listed ingredient into subset of primarily three pieces of data: ingredient, quantity, unit
 # Possibly categorize rest of listed item as "miscellaneous"
 # 
@@ -46,56 +86,36 @@ with open('ingredients.csv', newline='') as csvfile:
 #   CONSIDER THIS: non-alphanumeric delimiters are being removed in this approach. Maybe the locations should be noted in cases the 
 #                   positioning of ingredients may need to be guessed when database does not contain the ingredient
 #
-#
-
-def __containsUnit__(inputString):
-    #TODO: reformat decimal_quantity to include 2nd capture group containing a unit (i.e. 'g' in 100g) and add to this method
-    p = re.compile(r'\W+')
-    tokens = p.split(inputString)
-    found = False
-    foundUnits = []
-    for token in tokens:
-        if token.lower() in _unitDict:
-            found = True
-            foundUnits.append(token.lower())
-        else:
-            decUnit = re.match('(?<=\d+\.*)([a-zA-Z]+)')
-            print(decUnit)
-    if found:
-        print("found %s in '%s'" % (foundUnits, inputString))
-    return found         
-
-def __containsQuantity__(inputString):
-    #quantity = re.search('\d+(?=[a-zA-Z]\s)', inputString) # basic quantifier: [number] + whitespace
-    decimal_quantity = re.search('\d+\.*\d*(?=[a-zA-Z]*\s)', inputString) # basic decimal (optional .) quantifier: [decimal number][optional unit] + whitespace
-                                                                            # i.e.
-                                                                            # 1 cup, 1g
-                                                                            # 1.5 cups, 1.5g
-    fractional_quantity = re.search('\d*\s*\d+\/\d+(?=\s)', inputString)  # basic fractional quantifier: [fractional] + whitespace. 1/3 cup, 1 1/3 cup
-                                                                            # i.e.
-                                                                            # 1/3 cup
-                                                                            # 1 1/3 cup
-    #decimal_range_quantity  1.2-1.5 lb
-    #decimal romanized range quantity 1 to 1.5 ?
-    #fractional_range_quantity 1/3-2/3 cup
-    #compound fractional quantity 1 and 1/2 cup
-    #romanized quantities one, two, third, etc.
-
-    #if quantity:
-    #    print("found quantity match")
-    #    print(quantity.group(0))
-    if decimal_quantity:
-        print("found decimal quantity match '%s' in '%s'" % (decimal_quantity.group(0), inputString))
-    if fractional_quantity:
-        print("found fractional quantity match '%s' in '%s'" % (fractional_quantity.group(0).strip(), inputString))
-    if decimal_quantity or fractional_quantity:
-        return True
-    return False
 
 def extractQuantities(inputString):
     quantities_list = []
-    quantities_list.extend(_dp.finditer(inputString))
-    quantities_list.extend(_fp.finditer(inputString))
+    for i in range(len(inputString)):
+        c = inputString[i]
+        try:
+            name = unicodedata.name(c)
+        except ValueError:
+            continue
+        if name.startswith('VULGAR FRACTION'):
+            normalized = unicodedata.normalize('NFKC', c).replace(u"\u2044", '/')
+            repl = '%s%s%s'
+            if i>0:
+                if inputString[i-1].isdigit():
+                    repl = '%s %s%s'
+            inputString = repl % (inputString[:i], normalized, inputString[i+1:])
+    fpmat = _fp.finditer(inputString)
+    for mat in fpmat:
+        if mat:
+            repl = ""
+            for i in range(mat.start(), mat.end()):
+                repl += "_"
+            inputString = inputString[:mat.start()] + repl + inputString[mat.end():]
+            frac = mat.group()
+            frac_flt = float(sum(fractions.Fraction(term) for term in frac.split()))
+            quantities_list.append(Token(TokenType.QTY, frac_flt, mat.start(), mat.end()))
+    dpmat = _dp.finditer(inputString)
+    for mat in dpmat:
+        quantities_list.append(Token(TokenType.QTY, float(mat.group()), mat.start(), mat.end()))
+    quantities_list.sort(key=operator.attrgetter('start'))
     return quantities_list
 
 def extractUnits(inputString):
@@ -103,8 +123,9 @@ def extractUnits(inputString):
     units_list = []
     dupmat = _dup.finditer(inputString)
     for m in dupmat:
-        if m.group().lower() in _unitDict:
-            units_list.append(m)
+        if m.group() in _unitDict:
+            units_list.append(Token(TokenType.UNIT, m.group(), m.start(), m.end()))
+    units_list.sort(key=operator.attrgetter('start'))
     return units_list
 
 def extractIngredients(inputString):
@@ -119,5 +140,27 @@ def extractIngredients(inputString):
                 for i in range(imat.start(), imat.end()):
                     repl += "_"
                 inputString = inputString[:imat.start()] + repl + inputString[imat.end():]
-                ingred_list.append(imat)
+                ingred_list.append(Token(TokenType.INGR, imat.group(), imat.start(), imat.end()))
+    ingred_list.sort(key=operator.attrgetter('start'))
     return ingred_list
+
+def processIngredient(inputString):
+    tokens_list = []
+    ingred_list = []
+    ingred=None
+    qty=None
+    unit=None
+    qtys = extractQuantities(inputString)
+    if len(qtys) > 0:
+        qty = qtys[0].value
+    units = extractUnits(inputString)
+    if len(units) > 0:
+        unit = units[0].value
+    ingreds = extractIngredients(inputString)
+    if len(ingreds) > 0:
+        ingred = ingreds[0].value
+    tokens_list.extend(qtys)
+    tokens_list.extend(units)
+    tokens_list.extend(ingreds)
+    tokens_list.sort(key=operator.attrgetter('start'))
+    return Ingredient(_string=inputString, ingredient=ingred, quantity=qty, unit=unit) 
