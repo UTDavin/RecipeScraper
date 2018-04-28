@@ -32,7 +32,7 @@ class Token:
         return "string: %s tokentype: %s position: (%s,%s)" % (self.string, self.tokentype.name, self.start, self.end) 
 
 class Ingredient:
-    def __init__(self, _string, ingredient=None, quantity=None, unit=None):
+    def __init__(self, _string="", ingredient=None, quantity=None, unit=None):
         self._string = _string
         self.ingredient = ingredient
         self.quantity = quantity
@@ -40,7 +40,9 @@ class Ingredient:
     def __add__(self, another):
         if self.ingredient != another.ingredient:
             return self
-        return Ingredient(self.ingredient, self.quantity * ureg(self.unit) + another.quantity * ureg(another.unit), self.unit)
+        ingredSum = self.quantity * ureg(self.unit) + another.quantity * ureg(another.unit)
+        if ingredSum:
+            return Ingredient("", self.ingredient, ingredSum.magnitude, ingredSum.units)
     def __str__(self):
         return "string: %s\ningredient: %s quantity: %s unit: %s\n" % (self._string, self.ingredient, self.quantity, self.unit)
     def __repr__(self):
@@ -123,8 +125,12 @@ def extractUnits(inputString):
     units_list = []
     dupmat = _dup.finditer(inputString)
     for m in dupmat:
-        if m.group() in _unitDict:
-            units_list.append(Token(TokenType.UNIT, m.group(), m.start(), m.end()))
+        try:
+            qty = ureg(m.group())
+        except:
+            continue
+        if qty:
+            units_list.append(Token(TokenType.UNIT, qty.units, m.start(), m.end()))
     units_list.sort(key=operator.attrgetter('start'))
     return units_list
 

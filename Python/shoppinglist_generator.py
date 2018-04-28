@@ -40,8 +40,8 @@ while True:
         state = prgState.PROCESSEDLIST
         continue
     elif state == prgState.PROCESSEDLIST:
-        for item in processedList:
-            print(item)
+        for c, value in enumerate(processedList, 0):
+            print(c, value)
 #3. display results of processing
         userChoice = input("1=correct entry 2=add another recipe 3=make shopping list (or enter 'q' to quit): ")
         if userChoice == "2":
