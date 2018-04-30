@@ -38,20 +38,51 @@ class Ingredient:
         self.quantity = quantity
         self.unit = unit
     def __add__(self, another):
+        if not self.ingredient or not another.ingredient or not self.unit or not another.unit or not self.quantity or not another.quantity:
+            return None
         if self.ingredient != another.ingredient:
-            return self
-        ingredSum = self.quantity * ureg(self.unit) + another.quantity * ureg(another.unit)
+            return None
+        try:
+            ingredSum = self.quantity * self.unit + another.quantity * another.unit
+        except:
+            return None
         if ingredSum:
             return Ingredient("", self.ingredient, ingredSum.magnitude, ingredSum.units)
     def __str__(self):
         return "string: %s\ningredient: %s quantity: %s unit: %s\n" % (self._string, self.ingredient, self.quantity, self.unit)
     def __repr__(self):
         return "string: %s\ningredient: %s quantity: %s unit: %s\n" % (self._string, self.ingredient, self.quantity, self.unit)
+    def combine(ingr_list):
+        ingr_dict = {}
+        incomplete_ingr = []
+        for ingr in ingr_list:
+            if ingr.ingredient:
+                if ingr.ingredient not in ingr_dict:
+                    ingr_dict[ingr.ingredient] = ingr
+                else:
+                    combined = ingr_dict[ingr.ingredient] + ingr
+                    if combined:
+                        ingr_dict[ingr.ingredient] = combined
+                    else:
+                        incomplete_ingr.append(ingr)
+            else:
+                incomplete_ingr.append(ingr)
+        combined_list = list(ingr_dict.values())
+        combined_list.extend(incomplete_ingr)
+        return combined_list
 
-with open('units.csv', newline='') as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        _unitDict.append(row['unit'])
+    def changeUnit(self, s):
+        try:
+            newUnit = ureg[s]
+            if newUnit:
+                self.unit = newUnit
+                return newUnit
+        except:
+            return None
+#with open('units.csv', newline='') as csvfile:
+#    reader = csv.DictReader(csvfile)
+#    for row in reader:
+#        _unitDict.append(row['unit'])
 
 with open('ingredients.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
@@ -169,4 +200,5 @@ def processIngredient(inputString):
     tokens_list.extend(units)
     tokens_list.extend(ingreds)
     tokens_list.sort(key=operator.attrgetter('start'))
+    #token patterns
     return Ingredient(_string=inputString, ingredient=ingred, quantity=qty, unit=unit) 
