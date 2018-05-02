@@ -20,6 +20,10 @@ class TokenType(Enum):
     INGR = 2
     CONJ = 3
 
+_p1 = [TokenType.QTY, TokenType.UNIT, TokenType.INGR] # i.e. 1 tsp of salt
+_p2 = [TokenType.QTY, TokenType.INGR] # i.e. 1 onion
+_p3 = [TokenType.INGR, TokenType.QTY, TokenType.UNIT] # i.e. garlic - 2 cloves
+
 class Token:
     def __init__(self, tokentype, value, start, end):
         self.tokentype = tokentype
@@ -75,10 +79,11 @@ class Ingredient:
         try:
             newUnit = ureg[s]
             if newUnit:
-                self.unit = newUnit
-                return newUnit
+                self.unit = newUnit.units
+                return self.unit
         except:
             return None
+
 #with open('units.csv', newline='') as csvfile:
 #    reader = csv.DictReader(csvfile)
 #    for row in reader:
@@ -87,11 +92,10 @@ class Ingredient:
 with open('ingredients.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
-        _ingrDict.append(row['ingredient'])
-    _ingrDict.sort(key=len, reverse=True)        
+        _ingrDict.append(row)
+    _ingrDict.sort(key=lambda x:len(x['ingredient']), reverse=True)        
 
 # Purpose: process a listed ingredient into subset of primarily three pieces of data: ingredient, quantity, unit
-# Possibly categorize rest of listed item as "miscellaneous"
 # 
 # Considerations:
 #   Without a massive ingredients database, much of the ingredients will not be identifiable. It may be possible to infer where the ingredients are
@@ -169,15 +173,17 @@ def extractIngredients(inputString):
     inputString = inputString.lower()
     ingred_list = []
     for ingred in _ingrDict:
-        pattern = r"\b" + ingred + r"\b"
-        im = re.finditer(pattern, inputString)
-        for imat in im:
-            if imat:
-                repl = ""
-                for i in range(imat.start(), imat.end()):
-                    repl += "_"
-                inputString = inputString[:imat.start()] + repl + inputString[imat.end():]
-                ingred_list.append(Token(TokenType.INGR, imat.group(), imat.start(), imat.end()))
+        for val in ingred.values():
+            if len(val)>0:
+                pattern = r"\b" + val + r"\b"
+                im = re.finditer(pattern, inputString)
+                for imat in im:
+                    if imat:
+                        repl = ""
+                        for i in range(imat.start(), imat.end()):
+                            repl += "_"
+                        inputString = inputString[:imat.start()] + repl + inputString[imat.end():]
+                        ingred_list.append(Token(TokenType.INGR, imat.group(), imat.start(), imat.end()))
     ingred_list.sort(key=operator.attrgetter('start'))
     return ingred_list
 
@@ -200,5 +206,7 @@ def processIngredient(inputString):
     tokens_list.extend(units)
     tokens_list.extend(ingreds)
     tokens_list.sort(key=operator.attrgetter('start'))
-    #token patterns
+    if len(tokens_list) > 1:
+        if tokens_list[0].tokentype == TokenType.QTY and tokens_list[1].tokentype == TokenType.INGR:
+            unit = ureg("dimensionless").units
     return Ingredient(_string=inputString, ingredient=ingred, quantity=qty, unit=unit) 

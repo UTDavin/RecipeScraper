@@ -2,6 +2,7 @@ import web_recipescraper
 from IngredientProcessing import ingredient_processor
 from enum import Enum
 import re
+import csv
 
 class prgState(Enum):
     INIT = 0
@@ -13,11 +14,13 @@ state = prgState.INIT
 ingredientList = []
 tmpList = []
 processedList = []
+
 while True:
     print()
 #1. scrape ingredients list from web
     if state == prgState.INIT:
-        tmpList = web_recipescraper.getIngredients()
+        url = input("Recipe URL: ")
+        tmpList = web_recipescraper.getIngredients(url)
         if tmpList == None:
             userInput = (input("Try again? [Y/N]: ")).lower()
             if userInput == "y":
@@ -32,7 +35,6 @@ while True:
             continue
     elif state == prgState.OBTAINEDLIST:        
 #2. process ingredients from list
-        #TODO: refine ingredient processor
         for ingred in tmpList:
             processed = ingredient_processor.processIngredient(ingred)
             processedList.append(processed)
@@ -48,7 +50,16 @@ while True:
         elif userChoice == "1":
             state = prgState.EDITINGLIST
         elif userChoice == "3":
-            print("make shopping list (to be implemented")
+            filename = input("shopping list file name:")
+            try:
+                with open("lists/" + filename + '.csv','w', newline='') as csvfile:
+                    fieldnames = ["ingredient", "quantity", "unit", "original_string"]
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    writer.writeheader()
+                    for ingred in processedList:
+                        writer.writerow({"ingredient":ingred.ingredient, "quantity":ingred.quantity, "unit":ingred.unit, "original_string":ingred._string})
+            except:
+                print("error creating file")
         elif userChoice.lower() == "q":
             quit()
         else:

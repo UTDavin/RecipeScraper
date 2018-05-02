@@ -95,7 +95,7 @@ def __generalScrape__(souparg):
                     num_quantity_items += 1
                 if __containsUnit__(ingredient):
                     num_unit_items += 1
-        if num_quantity_items > len(listItems)/2 and num_unit_items > len(listItems)/2: #looks like a good list because over half of the list items had a quantity in them and/or had a unit
+        if num_quantity_items + num_unit_items > len(listItems)/2: #looks like a good list because over half of the list items had a quantity in them and/or had a unit
             fullList.extend(filteredList)
     if len(fullList) == 0:
         print("No good ingredients list candidates found")
@@ -138,24 +138,21 @@ def __containsQuantity__(inputString):
         return True
     return False
 
-def getIngredients():
-    request = input("Enter URL of recipe (or enter q to quit): ")
-    if request == "q":
-        return None
+def getIngredients(url):
     try:
-        response = urllib.request.urlopen(request)
+        response = urllib.request.urlopen(url)
     except:
         print("something went wrong with request")
         return None
     responsetext = response.read()
     soup = BeautifulSoup(responsetext, "html.parser")
     list1 = __ERSScrape__(soup)
-    list2 = __ingrCSSScrape__(soup)
-    list3 = __generalScrape__(soup)
     if len(list1) > 0:
         return list1
+    list2 = __ingrCSSScrape__(soup)
     if len(list2) > 0:
         return list2
+    list3 = __generalScrape__(soup)
     if len(list3) > 0:
         return list3
     return []
