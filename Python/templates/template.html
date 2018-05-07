@@ -1,47 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+	<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Recipe Scraper Home</title>
-
     <!-- Bootstrap -->
+			<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
    <!-- Latest compiled and minified CSS -->
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
-		<!-- Optional theme -->
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+	<link rel="stylesheet" type="text/css" href="https://rawgit.com/wenzhixin/bootstrap-table/master/src/bootstrap-table.css">
+    <script type="text/javascript" src="https://rawgit.com/wenzhixin/bootstrap-table/master/src/bootstrap-table.js"></script>
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
-  <body>
-    <h1>Welcome to Recipe Scraper!</h1>
-    <label for="basic-url">Process a recipe:</label>
-    <form method="post" action="{{ url_for('process') }}">
-		  <div class="input-group">
-  		    <span class="input-group-addon" id="basic-addon3">Recipe URL</span>
-  		    <input name="recipeurl" type="text" class="form-control" id="basic-url" aria-describedby="basic-addon3">
-		  </div>
-		</form>
-    
-    <div class="panel panel-default">
-  	<!-- Default panel contents -->
-  		<div class="panel-heading">Processed Ingredients</div>
-			<!-- Table -->
-			{{table}}
+	</head>
+	<body>
+	<h1>Welcome to Recipe Scraper!</h1>
+	<div class="container">
+	<div class="row">
+	<div class="col">
+	<form method="post" action="{{ url_for('process') }}">
+		<div class="input-group">
+			<span class="input-group-addon" id="basic-addon3">Recipe URL</span>
+			<input name="recipeurl" type="text" class="form-control" id="basic-url" aria-describedby="basic-addon3">
+			<span class="input-group-btn">
+				<button class="btn btn-default" type="button">Go!</button>
+			</span>
+		</div>
+	</form>
+	</div>
+	</div>
+	{% if table|length > 0 %}
+		<div class="row" style="margin-top:20px;margin-bottom:20px;" >
+		<div class="btn-group btn-group-lg" role="group" aria-label="">
+				<button id="savechanges" type="button" class="btn btn-default" >Save changes</button>
+				<button id="combinelists" type="button" class="btn btn-default">Combine lists</button>
+		</div>
+		</div>
+		
+	<div class="row">
+	<div class="col align-self-center">
+	<div class="panel-group" id="accordion">
+	<div class="panel panel-info">
+		<div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapse1">
+        Processed Ingredients for {{url}}
+		</div>
+		<div id="collapse1" class="panel-collapse collapse in">
+		<!-- Default panel contents -->
+			<div class="btn-group" role="group" aria-label="Basic example">
+				<button id="add" type="button" class="btn btn-default" >Add</button>
+				<button id="delete" type="button" class="btn btn-default">Delete</button>
+			</div>
+			<table id="table" data-row-style="rowStyle" data-toggle="table" data-click-to-select="true">
+				<thead>
+					<th data-field="state" data-checkbox="true"></th>
+					<th data-field="edit" data-formatter="tableEditButtons"></th>
+					<th data-field="listing">listing</th>
+					<th data-field="ingr">ingredient</th>
+					<th data-field="qty">quantity</th>
+					<th data-field="unit">unit</th>
+				</thead>
+				<tbody>
+				{% for ingr in table %}
+					<tr>
+						<td></td>
+						<td></td>
+						<td>{{ingr._string}}</th>       
+						<td>{{ingr.ingredient}}</td>		
+						<td>{{ingr.quantity}}</td>	      
+						<td>{{ingr.unit}}</td>
+					</tr>	    
+				{% endfor %}	
+				</tbody>
+			</table>
+		</div>
+	</div>
+	</div>
+	</div>
     </div>
-		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-		<!-- Latest compiled and minified JavaScript -->
-		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> 
+		<!-- Modal -->
+<div id="editModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+	<!-- Modal content-->
+	<div class="modal-content">
+	  <div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" >&times;</button>
+		<h4 class="modal-title">Edit Ingredient</h4>
+	  </div>
+	  <div class="modal-body">
+		  <div class="form-group">
+			<label for="editlisting">Listing (optional)</label>
+			<input class="form-control" type="text" id="editlisting">
+		  </div>
+		  <div class="form-group">
+			<label for="editingr">Ingredient</label>
+			<input class="form-control" type="text" id="editingr">
+		  </div>
+		  <div class="form-group"> 
+			<label for="editqty">Quantity</label>
+			<input class="form-control" type="number" min="0" id="editqty">
+		  </div>
+			<div class="form-group">
+			  <label for="editunit">Unit:</label>
+			  <select class="form-control" id="editunit">
+			  	<option>cup</option>
+				<option>gallon</option>
+				<option>gram</option>
+				<option>kilogram</option>
+				<option>liter</option>
+				<option>ounce</option>
+				<option>pint</option>
+				<option>pound</option>
+				<option>quart</option>
+				<option>teaspoon</option>
+				<option>tablespoon</option>
+			  </select>
+			</div>
+		  </div>
+	  <div class="modal-footer">
+		<button type="button" id="saveedit" class="btn btn-default" data-dismiss="modal">Save</button>
+	  </div>
+	</div>
+  </div>
+</div>
+<div id="addModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+	<!-- Modal content-->
+	<div class="modal-content">
+	  <div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" >&times;</button>
+		<h4 class="modal-title">New Ingredient</h4>
+	  </div>
+	  <div class="modal-body">
+		  <div class="form-group">
+			<label for="addlisting">Listing (optional)</label>
+			<input class="form-control" type="text" id="addlisting">
+		  </div>
+		  <div class="form-group">
+			<label for="addingr">Ingredient</label>
+			<input class="form-control" type="text" id="addingr">
+		  </div>
+		  <div class="form-group"> 
+			<label for="addqty">Quantity</label>
+			<input class="form-control" type="number" min="0" id="addqty">
+		  </div>
+			<div class="form-group">
+			  <label for="addunit">Unit:</label>
+			  <select class="form-control" id="addunit">
+			  	<option>cup</option>
+				<option>gallon</option>
+				<option>gram</option>
+				<option>kilogram</option>
+				<option>liter</option>
+				<option>ounce</option>
+				<option>pint</option>
+				<option>pound</option>
+				<option>quart</option>
+				<option>teaspoon</option>
+				<option>tablespoon</option>
+			  </select>
+			</div>
+		  </div>
+	  <div class="modal-footer">
+		<button type="button" id="saveadd" class="btn btn-default" data-dismiss="modal">Add</button>
+	  </div>
+	</div>
+  </div>
+</div>
+	<script>
+	    var $table = $('#table'),
+		$addbutton = $('#add'),
+        $editbutton = $('#edit'),
+		$deletebutton = $('#delete'),
+		$saveedit = $('#saveedit'),
+		$saveadd = $('#saveadd'),
+		$currentrow;
+	
+	function tableEditButtons(value, row, index) {
+		return [
+                '<button type="button" class="btn btn-default btn-xs" ',
+                'onclick="',
+				'$currentrow = $(this).closest(&quot;tr&quot;);$(&quot;#editlisting&quot;).val($currentrow.children().eq(2).text());',
+				'$(&quot;#editingr&quot;).val($currentrow.children().eq(3).text()); $(&quot;#editqty&quot;).val($currentrow.children().eq(4).text());',
+				'$(&quot;#editunit&quot;).val($currentrow.children().eq(5).text()); $(&quot;#editModal&quot;).modal();',
+				'">Edit</button>'
+        ].join('');
+	}
+
+	function editRow(){
+		$currentrow = $(this).closest('tr');
+		$('#editlisting').val($currentrow.children().eq(2).text()); 
+		$('#editingr').val($currentrow.children().eq(3).text()); 
+		$('#editqty').val($currentrow.children().eq(4).text()); 
+		$('#editunit').val($currentrow.children().eq(5).text()); 
+		$('#editModal').modal();
+	}
+	
+	$(function () {
+        $addbutton.click(function () {
+			$('#addModal').modal();
+        });
+    });
+	
+	$(function () {
+        $deletebutton.click(function () {
+            $table.bootstrapTable('remove', {
+                field: 'state',
+                values: [true]
+            });
+        });
+    });
+	
+	$(function () {
+        $saveadd.click(function () {
+			var newlist = $('#addlisting').val(),
+			newingr = $('#addingr').val(),
+			newqty = $('#addqty').val(),
+			newunit = $('#addunit').val();
+			
+			$table.bootstrapTable('append', [{state:false, edit:true, listing:newlist, ingr:newingr, qty:newqty, unit:newunit}]);
+        });
+    });
+	
+	$(function () {
+        $saveedit.click(function () {
+			var rowindex = $('tr', $table).index($currentrow)-1,
+			newlist = $('#editlisting').val(),
+			newingr = $('#editingr').val(),
+			newqty = $('#editqty').val(),
+			newunit = $('#editunit').val();
+			$table.bootstrapTable('updateRow', {index:rowindex, row:{state:false, edit:true, listing:newlist, ingr:newingr, qty:newqty, unit:newunit}});
+		});
+	});
+	
+	//$(function () {
+	//	$('.edit').on('click',(function () {
+	//	$currentrow = $(this).closest('tr');
+	//	$('#editlisting').val($currentrow.children().eq(2).text()); 
+	//	$('#editingr').val($currentrow.children().eq(3).text()); 
+	//	$('#editqty').val($currentrow.children().eq(4).text()); 
+	//	$('#editunit').val($currentrow.children().eq(5).text()); 
+	//	$('#editModal').modal();
+	//	}));
+	//});
+	</script>
+	{% endif %}
+    </div>
   </body>
 </html>

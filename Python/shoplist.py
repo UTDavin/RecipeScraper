@@ -10,17 +10,21 @@ class IngrTable(Table):
     quantity=Col("Qty")
     unit=Col("unit")
 
+
+processedList = []
+
 @app.route('/')
 def home():
-    return render_template('template.html')
+    return render_template('template.html', table=processedList)
 
 @app.route('/process', methods=['GET', 'POST'])
 def process():
     url = request.form['recipeurl']
+    print(url)
     ingredientslist = web_recipescraper.getIngredients(url)
-    processedList = []
-    for ingred in ingredientslist:
-        processed = ingredient_processor.processIngredient(ingred)
-        processedList.append(processed)
-    table = IngrTable(processedList)
-    return render_template('template.html', table=table)
+    if ingredientslist:
+        for ingred in ingredientslist:
+            processed = ingredient_processor.processIngredient(ingred)
+            processedList.append(processed)
+        print(processedList)
+    return render_template('template.html', table=processedList, url=url)

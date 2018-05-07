@@ -6,6 +6,7 @@ import urllib.request
 import re
 import csv
 import unicodedata
+import sys
 
 _dp = re.compile('(?<!\/)\d+\.*\d*(?=[a-zA-Z]*(\s|[^\/]))') #decimal quantity identifier
 _fp = re.compile('(\d\s)*\d+\/\d+(?=\s)') #fractional quantity identifier. assumption - ingredients using fractional quantities put spacing between fraction and unit
@@ -142,6 +143,7 @@ def getIngredients(url):
     try:
         response = urllib.request.urlopen(url)
     except:
+        print(sys.exc_info()[0])
         print("something went wrong with request")
         return None
     responsetext = response.read()
