@@ -1,0 +1,64 @@
+{
+  "name": "react-recipescraper",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "4.10.0",
+    "@material-ui/icons": "4.5.1",
+    "@okta/jwt-verifier": "1.0.0",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "body-parser": "1.18.3",
+    "cors": "2.8.4",
+    "dotenv": "8.1.0",
+    "epilogue": "0.7.1",
+    "express": "4.16.3",
+    "final-form": "4.18.5",
+    "js-quantities": "^1.7.5",
+    "lodash": "4.17.10",
+    "moment": "2.22.2",
+    "needle": "2.3.0",
+    "node-fetch": "^2.6.0",
+    "osmosis": "^1.1.10",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-final-form": "6.3.0",
+    "react-router-dom": "5.1.2",
+    "react-scripts": "3.4.1",
+    "recompose": "0.30.0",
+    "sequelize": "4.44.3",
+    "sqlite3": "4.1.0",
+    "uuid": "3.3.2"
+  },
+  "resolutions": {
+    "needle": "2.3.0"
+  },
+  "scripts": {
+    "start": "npm-run-all --parallel watch:server start:web",
+    "start:web": "react-scripts start",
+    "start:server": "node src/server",
+    "watch:server": "nodemon --watch src/server src/server",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "npm-run-all": "4.1.3"
+  }
+}
