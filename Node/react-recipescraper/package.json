@@ -21,6 +21,7 @@
     "moment": "2.22.2",
     "needle": "2.3.0",
     "node-fetch": "^2.6.0",
+    "numeric-quantity": "^0.5.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-final-form": "6.3.0",

@@ -1,3 +1,4 @@
+const numericQuantity = require('numeric-quantity');
 var request = require('request');
 var cheerio = require('cheerio');
 var Qty = require('js-quantities');
@@ -50,20 +51,38 @@ async scrapeLists(url)
     {
       let results = [];
       let itemCount = $('li', lists[i]).length;
+      let ingrCount=0;
+      let qtyCount=0;
       $('li', lists[i]).each(function(j, item){
         let ingr = Scraper.processIngredient($(this).text().trim());
         if(ingr !== null)
         {
+          ingrCount += ingr.ingrs.length;
+          qtyCount += ingr.qtys.length;
+          ingr.qtys = ingr.qtys.join(' ');
+          ingr.ingrs = ingr.ingrs.join(' ');
           results.push(ingr);
         }
       });
-      if(results.length > itemCount/2) // if over half of the list items are "valid ingredients", use this list
+      if(results.length > itemCount/2) // if over half of the list items are "valid ingredients", add as candidate
       {
-        candidate = candidate.concat(results);
+        candidate.push({items:results, ratio: qtyCount/parseFloat(ingrCount), combinedCount:ingrCount+qtyCount});
       }
     }
-    console.log("valid lists: " + candidate.length + " out of " + lists.length);
-    return candidate;
+
+    let result = [];
+    let highestRatio = 0.0; //ratio of qtys to ingrs. highest pairing ratio = most likely candidate
+    let highestCount = 0;
+    candidate.forEach(element => {
+      if(element.ratio > highestRatio || (element.ratio == highestRatio && element.combinedCount > highestCount))
+      {
+        highestRatio = element.ratio;
+        highestCount = element.combinedCount;
+        result = element.items;
+      }
+    });
+
+    return result;
 }
 
 scrapeText(url)
@@ -92,6 +111,28 @@ static processIngredient(listing)
   var lower = listing.toLowerCase(); // TODO: check if lower case messes up quantity/units check
   var tokens = lower.split(" ");
   var i=0;
+  while(i < tokens.length)
+  {
+    if(i+1 < tokens.length)
+    {
+      let candidate = numericQuantity(tokens[i] + " " + tokens[i+1]);
+      if(!Number.isNaN(candidate))
+      {
+        console.log(candidate);
+        tokens.splice(i, 2, candidate);
+        i=i+1;
+        continue;
+      }
+    }
+    let candidate = numericQuantity(tokens[i]);
+    if(!Number.isNaN(candidate))
+    {
+      console.log(candidate);
+      tokens.splice(i, 1, candidate);
+    }
+    i=i+1;
+  }
+  i=0;
   var qtys=[];
   var ingrs=[];
   while(i < tokens.length)
@@ -106,7 +147,6 @@ static processIngredient(listing)
       if(ingr_set.has(candidate))
       {
         ingrMatch = true;
-        console.log('found ingr ' + candidate + ' in ' + listing);
         ingrs.push(candidate);
         break;
       }
@@ -146,8 +186,8 @@ static processIngredient(listing)
 
   return ingrs.length > 0 ? {
     list: listing,
-    qtys: qtys.join(','),
-    ingrs: ingrs.join(',')
+    qtys: qtys,
+    ingrs: ingrs
   } : null;
 }
 

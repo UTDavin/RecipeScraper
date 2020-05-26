@@ -114,6 +114,7 @@ render() {
                   <TableRow>
                     <TableCell>Qty</TableCell>
                     <TableCell>Ingredient</TableCell>
+                    <TableCell>Listing</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -125,6 +126,9 @@ render() {
                       <TableCell style={
                         {whiteSpace: "normal",
                         wordWrap: "break-word"}} align="center">{data.qtys}</TableCell>
+                      <TableCell style={
+                        {whiteSpace: "normal",
+                        wordWrap: "break-word"}} align="center">{data.ingrs}</TableCell>
                       <TableCell style={
                         {whiteSpace: "normal",
                         wordWrap: "break-word"}} align="center">{data.list}</TableCell>
