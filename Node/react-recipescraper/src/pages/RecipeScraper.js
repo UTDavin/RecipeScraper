@@ -112,9 +112,9 @@ render() {
               <Table aria-label="simple table">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Qty</TableCell>
-                    <TableCell>Ingredient</TableCell>
-                    <TableCell>Listing</TableCell>
+                    <TableCell align="center">Qty</TableCell>
+                    <TableCell align="center">Ingredient</TableCell>
+                    <TableCell align="center">Listing</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>

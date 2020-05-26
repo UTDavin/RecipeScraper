@@ -118,7 +118,6 @@ static processIngredient(listing)
       let candidate = numericQuantity(tokens[i] + " " + tokens[i+1]);
       if(!Number.isNaN(candidate))
       {
-        console.log(candidate);
         tokens.splice(i, 2, candidate);
         i=i+1;
         continue;
@@ -127,7 +126,6 @@ static processIngredient(listing)
     let candidate = numericQuantity(tokens[i]);
     if(!Number.isNaN(candidate))
     {
-      console.log(candidate);
       tokens.splice(i, 1, candidate);
     }
     i=i+1;
