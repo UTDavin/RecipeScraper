@@ -56,6 +56,10 @@ fetch = async (method, endpoint, body) => {
   }
 }
 
+reset = () => {
+  this.setState({url: "", data: []});
+}
+
 scrapeUrl = async (value) => {
   fetch(`${API}/scrape/?url=${encodeURI(value.url)}`)
   .then(response => 
@@ -91,6 +95,7 @@ render() {
             <Toolbar>
               <div style={{flex: 1}}/>
               <Button
+                onClick={this.reset}
                 variant="contained"
                 color="secondary"
                 startIcon={<DeleteIcon />}
@@ -106,7 +111,10 @@ render() {
               </Button>
             </Toolbar>
             <Typography align="center" variant="h5" id="tableTitle" component="div">
-              Ingredients for {this.state.url}
+              Looks Delicious!
+            </Typography>
+            <Typography align="center" variant="h6" component="div">
+              url: <a href={this.state.url}>  {this.state.url.length > 50 ? this.state.url.substring(0,50) + "..." : this.state.url}</a>
             </Typography>
             <TableContainer>
               <Table aria-label="simple table">
