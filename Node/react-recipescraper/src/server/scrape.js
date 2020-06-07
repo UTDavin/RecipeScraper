@@ -22,10 +22,22 @@ const initializeIngredients = async () => {
 }
 class Scraper {
 
+static async getIngredientsList()
+{
+  if(ingr_set.size == 0) await initializeIngredients();
+  return Array.from(ingr_set);
+}
+
+static getUnits()
+{
+  var arr =  Qty.getUnits('mass').concat(Qty.getUnits('volume')).concat('none');
+  arr.map((i, index, arr) => { return {id: index, name: i}; });
+  return arr;
+}
+
 async scrape(recipeUrl)
 {
   if(ingr_set.size == 0) await initializeIngredients();
-  //ingr_set.forEach(element => console.log(element));
   var results = await this.scrapeRecipes(recipeUrl);
   return results;
 }
@@ -59,8 +71,8 @@ async scrapeLists(url)
         {
           ingrCount += ingr.ingrs.length;
           qtyCount += ingr.qtys.length;
-          ingr.qtys = ingr.qtys.join(' ');
-          ingr.ingrs = ingr.ingrs.join(' ');
+          ingr.qtys = ingr.qtys.join(',');
+          ingr.ingrs = ingr.ingrs.join(',');
           results.push(ingr);
         }
       });
@@ -181,7 +193,7 @@ static processIngredient(listing)
     catch{}
     i++;
   }
-
+  
   return ingrs.length > 0 ? {
     list: listing,
     qtys: qtys,

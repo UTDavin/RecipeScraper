@@ -18,6 +18,49 @@ import {
   TextField,
 } from '@material-ui/core';
 import { Form, Field } from 'react-final-form';
+import MaterialTable from 'material-table';
+
+
+import { forwardRef } from 'react';
+
+import AddBox from '@material-ui/icons/AddBox';
+import ArrowDownward from '@material-ui/icons/ArrowDownward';
+import Check from '@material-ui/icons/Check';
+import ChevronLeft from '@material-ui/icons/ChevronLeft';
+import ChevronRight from '@material-ui/icons/ChevronRight';
+import Clear from '@material-ui/icons/Clear';
+import DeleteOutline from '@material-ui/icons/DeleteOutline';
+import Edit from '@material-ui/icons/Edit';
+import FilterList from '@material-ui/icons/FilterList';
+import FirstPage from '@material-ui/icons/FirstPage';
+import LastPage from '@material-ui/icons/LastPage';
+import Remove from '@material-ui/icons/Remove';
+import SaveAlt from '@material-ui/icons/SaveAlt';
+import Search from '@material-ui/icons/Search';
+import ViewColumn from '@material-ui/icons/ViewColumn';
+
+var Qty = require('js-quantities');
+
+
+const tableIcons = {
+    Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
+    Check: forwardRef((props, ref) => <Check {...props} ref={ref} />),
+    Clear: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
+    Delete: forwardRef((props, ref) => <DeleteOutline {...props} ref={ref} />),
+    DetailPanel: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
+    Edit: forwardRef((props, ref) => <Edit {...props} ref={ref} />),
+    Export: forwardRef((props, ref) => <SaveAlt {...props} ref={ref} />),
+    Filter: forwardRef((props, ref) => <FilterList {...props} ref={ref} />),
+    FirstPage: forwardRef((props, ref) => <FirstPage {...props} ref={ref} />),
+    LastPage: forwardRef((props, ref) => <LastPage {...props} ref={ref} />),
+    NextPage: forwardRef((props, ref) => <ChevronRight {...props} ref={ref} />),
+    PreviousPage: forwardRef((props, ref) => <ChevronLeft {...props} ref={ref} />),
+    ResetSearch: forwardRef((props, ref) => <Clear {...props} ref={ref} />),
+    Search: forwardRef((props, ref) => <Search {...props} ref={ref} />),
+    SortArrow: forwardRef((props, ref) => <ArrowDownward {...props} ref={ref} />),
+    ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
+    ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
+  };
 
 const useStyles = makeStyles((theme) => ({
   button: {
@@ -27,6 +70,8 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 650,
   },
 }));
+
+const unitsLookup = {}
 
 const API = process.env.REACT_APP_API || 'http://localhost:3001';
 
@@ -68,9 +113,25 @@ scrapeUrl = async (value) => {
     })
     .then(data => 
     {
+      //var ingredients=[];
+      //console.log(data.recipe);
+      //data.recipe.forEach(o => {
+      //  ingredients.push({qtys: Qty(o.qtys).toFloat(), units: Qty(o.qtys).units(), ingrs:o.ingrs, list:o.list})
+      //});
+      //ingredients.forEach( e => console.log(e))
       this.setState({url: value.url, data: data.recipe});
     });
 }
+
+getUnits = async () => await fetch(`${API}/units`)
+.then(response => 
+  {
+    return response.json();
+  })
+  .then(data => 
+  {
+    return data.units;
+  });
 
 render() {
   return (
@@ -110,40 +171,57 @@ render() {
                 Save Recipe
               </Button>
             </Toolbar>
-            <Typography align="center" variant="h5" id="tableTitle" component="div">
-              Looks Delicious!
-            </Typography>
             <Typography align="center" variant="h6" component="div">
-              url: <a href={this.state.url}>  {this.state.url.length > 50 ? this.state.url.substring(0,50) + "..." : this.state.url}</a>
+              <a href={this.state.url}>  {this.state.url.length > 50 ? this.state.url.substring(0,50) + "..." : this.state.url}</a>
             </Typography>
             <TableContainer>
-              <Table aria-label="simple table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell align="center">Qty</TableCell>
-                    <TableCell align="center">Ingredient</TableCell>
-                    <TableCell align="center">Listing</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {this.state.data.map((data) => (
-                    <TableRow>
-                      {/* <TableCell component="th" scope="row">
-                        {row.name}
-                      </TableCell> */}
-                      <TableCell style={
-                        {whiteSpace: "normal",
-                        wordWrap: "break-word"}} align="center">{data.qtys}</TableCell>
-                      <TableCell style={
-                        {whiteSpace: "normal",
-                        wordWrap: "break-word"}} align="center">{data.ingrs}</TableCell>
-                      <TableCell style={
-                        {whiteSpace: "normal",
-                        wordWrap: "break-word"}} align="center">{data.list}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <MaterialTable
+              options={{
+                search: false,
+                pageSize: 10
+              }}
+              title="Recipe"
+              columns={[{title:"Quantity", field:"qtys"}/*, {unit:"Unit", field:"units"}*/, {title:"Ingredient", field:"ingrs"}, {title:"Listing", field:"list"}]}
+              icons = {tableIcons}
+              data={this.state.data}
+              editable={{
+                onRowAdd: (newData) =>
+                  new Promise((resolve) => {
+                    setTimeout(() => {
+                      resolve();
+                      this.setState((prevState) => {
+                        const data = [...prevState.data];
+                        data.push(newData);
+                        return { ...prevState, data };
+                      });
+                    }, 600);
+                  }),
+                onRowUpdate: (newData, oldData) =>
+                  new Promise((resolve) => {
+                    setTimeout(() => {
+                      resolve();
+                      if (oldData) {
+                        this.setState((prevState) => {
+                          const data = [...prevState.data];
+                          data[data.indexOf(oldData)] = newData;
+                          return { ...prevState, data };
+                        });
+                      }
+                    }, 600);
+                  }),
+                onRowDelete: (oldData) =>
+                  new Promise((resolve) => {
+                    setTimeout(() => {
+                      resolve();
+                      this.setState((prevState) => {
+                        const data = [...prevState.data];
+                        data.splice(data.indexOf(oldData), 1);
+                        return { ...prevState, data };
+                      });
+                    }, 600);
+                  }),
+              }}
+            />
             </TableContainer>
           </Paper>
         )}

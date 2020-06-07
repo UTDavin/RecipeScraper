@@ -51,6 +51,18 @@ app.get('/scrape', async function (req, res)
   res.send({url: decoded, recipe: contents});
 });
 
+app.get('/ingredients', async function (req, res)
+{
+  var ingredients = await Scraper.getIngredientsList();
+  res.send({ingredients: ingredients});
+})
+
+app.get('/units', async function (req, res)
+{
+  var units = Scraper.getUnits();
+  res.send({units: units});
+})
+
 const port = process.env.SERVER_PORT || 3001;
 
 database.sync().then(() => {
