@@ -80,7 +80,6 @@ const initializeUnits = () => {
       }
       index++;
     });
-    Object.keys(aliases).forEach(e => console.log("alias:" + e));
   }
 }
 
