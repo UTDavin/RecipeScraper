@@ -53,7 +53,7 @@ app.get('/scrape', async function (req, res)
 
 app.get('/ingredients', async function (req, res)
 {
-  var ingredients = await Scraper.getIngredientsList();
+  var ingredients = await Scraper.getIngredients();
   res.send({ingredients: ingredients});
 })
 

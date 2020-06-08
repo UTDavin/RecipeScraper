@@ -3,41 +3,114 @@ var request = require('request');
 var cheerio = require('cheerio');
 var Qty = require('js-quantities');
 const fetch = require("node-fetch");
+const fs = require('fs');
 
 //https://world.openfoodfacts.org/ingredients.json
 //TODO: look at wikidata and other open-source ingredient collection alternatives
-const ingr_set = new Set();
+const ingr_set = {};
+const omitted_entries = new Set(["a", "and"]);
 const initializeIngredients = async () => {
-  await fetch('https://world.openfoodfacts.org/ingredients.json')
-    .then(res => res.json())
-    .then(data => data.tags.map(item => {
-      let name = item.name.replace(/-/g," ").trim(); //correct name delimiter;
-      if(!name.includes(":") && name.length > 0) //omit localized entries
-      {
-        ingr_set.add(name.toLowerCase());
-      }
-    }));
-  ingr_set.delete("a"); //why is "a" an ingredient...?
-  ingr_set.delete("and"); //why is "and" an ingredient?
+  if(Object.keys(ingr_set).length == 0) 
+  {
+    let loaded=false;
+    let ingredients;
+    try
+    {
+      let rawdata = fs.readFileSync(__dirname + '/ingredients.json');
+      ingredients = JSON.parse(rawdata);
+      loaded=true;
+      console.log("loaded local data");
+    }
+    catch
+    {
+      console.log("unable to load local data. fetching from web");
+    }
+
+    if(!loaded)
+    {
+      await fetch('https://world.openfoodfacts.org/ingredients.json')
+        .then(res => res.json()
+                        .catch(error => {
+                          console.log("error parsing data from web");
+                          throw error;
+                        }
+        ))
+        .then(data => {
+          ingredients = data;
+          loaded=true;
+          console.log("loaded data from web");
+        })
+        .catch(error => console.log("error fetching from openfoodfacts: " + error))
+    };
+    if(loaded)
+    {
+      let index = 0;
+      ingredients.tags.map(item => {
+        let name = item.name.replace(/-/g," ").trim().toLowerCase(); //replace - w/ space, clean up entry;
+        if(!name.includes(":") && name.length > 0 && !omitted_entries.has(name)) //omit localized entries
+        {
+          ingr_set[name] = index++;
+        }
+      });
+    }
+  }
 }
+
+const units = {};
+const aliases = {};
+const unitless = 'none';
+const initializeUnits = () => {
+  if(Object.keys(units).length == 0)
+  {
+    let index = 0;
+    let arr =  [unitless].concat(Qty.getUnits('mass')).concat(Qty.getUnits('volume'));
+    arr.forEach( e => {
+      units[e] = index;
+      try
+      {
+        Qty.getAliases(e).forEach( a => 
+          {
+            aliases[a] = e; //map all possible unit values to the default value
+          }
+        );
+      }
+      catch
+      {
+        console.log("could not get aliases for " + e);
+      }
+      index++;
+    });
+    Object.keys(aliases).forEach(e => console.log("alias:" + e));
+  }
+}
+
 class Scraper {
 
-static async getIngredientsList()
+static async getIngredients()
 {
-  if(ingr_set.size == 0) await initializeIngredients();
-  return Array.from(ingr_set);
+  await initializeIngredients();
+  var ret = {};
+  for(var key in ingr_set){
+    ret[ingr_set[key]] = key;
+    if(Object.keys(ret).length >= 20) break;
+  }
+  return ret;
 }
 
-static getUnits()
+static getUnits() //returns a lookup where key = index, value = unit name
 {
-  var arr =  Qty.getUnits('mass').concat(Qty.getUnits('volume')).concat('none');
-  arr.map((i, index, arr) => { return {id: index, name: i}; });
-  return arr;
+  initializeUnits();
+  var ret = {};
+  for(var key in units){
+    ret[units[key]] = key;
+  }
+  return ret;
 }
 
 async scrape(recipeUrl)
 {
-  if(ingr_set.size == 0) await initializeIngredients();
+  await initializeIngredients();
+  initializeUnits();
   var results = await this.scrapeRecipes(recipeUrl);
   return results;
 }
@@ -69,10 +142,8 @@ async scrapeLists(url)
         let ingr = Scraper.processIngredient($(this).text().trim());
         if(ingr !== null)
         {
-          ingrCount += ingr.ingrs.length;
-          qtyCount += ingr.qtys.length;
-          ingr.qtys = ingr.qtys.join(',');
-          ingr.ingrs = ingr.ingrs.join(',');
+          if(ingr.ingr != null) ingrCount++;
+          if(ingr.qty != null) qtyCount++;
           results.push(ingr);
         }
       });
@@ -93,7 +164,6 @@ async scrapeLists(url)
         result = element.items;
       }
     });
-
     return result;
 }
 
@@ -123,7 +193,7 @@ static processIngredient(listing)
   var lower = listing.toLowerCase(); // TODO: check if lower case messes up quantity/units check
   var tokens = lower.split(" ");
   var i=0;
-  while(i < tokens.length)
+  while(i < tokens.length) //pre-process string by replacing vulgar fractions with decimals
   {
     if(i+1 < tokens.length)
     {
@@ -142,62 +212,79 @@ static processIngredient(listing)
     }
     i=i+1;
   }
+
   i=0;
-  var qtys=[];
-  var ingrs=[];
+  var quantity=null;
+  var ingr=null;
+  var unit=units[unitless];
   while(i < tokens.length)
   {
-    //ingredients match
-    let ingrMatch=false;
-    let end = tokens.length;
-    while(!ingrMatch && end > i)
+    //ingredients match - only check if an ingredient hasn't been found yet
+    if(ingr == null)
     {
-      let slice = tokens.slice(i, end);
-      let candidate = slice.join(' ');
-      if(ingr_set.has(candidate))
+      let ingrMatch=false;
+      let end = tokens.length;
+      while(!ingrMatch && end > i)
       {
-        ingrMatch = true;
-        ingrs.push(candidate);
-        break;
+        let slice = tokens.slice(i, end);
+        let candidate = slice.join(' ');
+        if(candidate in ingr_set)
+        {
+          ingrMatch = true;
+          ingr=ingr_set[candidate]; //use lookup identifier
+          break;
+        }
+        end--;
       }
-      end--;
-    }
-    if(ingrMatch)
-    {
-      i = end;
-      continue;
+      if(ingrMatch)
+      {
+        i = end;
+        continue;
+      }
     }
     //quantity + unit check
-    if(i+1 < tokens.length)
+    if(quantity==null)
     {
-      try
+      if(i+1 < tokens.length)
       {
-        var qty = Qty(tokens[i] + " " + tokens[i+1]);//see if quantity + unit can be extracted using 2 tokens
-        if(qty !== null && (qty.kind() == 'mass'|| qty.kind() == 'volume') || qty.isUnitless())
+        try
         {
-          qtys.push(qty);
-          i=i+2;
-          continue;
+          var qty = Qty(tokens[i] + " " + tokens[i+1]);//see if quantity + unit can be extracted using 2 tokens
+          if(qty!==null && ((qty.units() in aliases) || qty.isUnitless()))
+          {
+            if(!qty.isUnitless()) 
+            {
+              unit = units[aliases[qty.units()]];
+            }
+            quantity = qty.toPrec('.01').toString().split(" ")[0];
+            i=i+2;
+            continue;
+          }
+        }
+        catch{}
+      }
+
+      try //see if quantity+unit can be extracted from 1 token
+      {
+        var qty = Qty(tokens[i]);
+        if(qty !== null && ((qty.units() in aliases) || qty.isUnitless())) 
+        {
+          if(!qty.isUnitless())
+          {
+            unit = units[aliases[qty.units()]];
+          }
+          quantity = qty.toPrec('.01').toString().split(" ")[0];
         }
       }
       catch{}
     }
-    try
-    {
-      var qty = Qty(tokens[i]);
-      if(qty !== null && (qty.kind() == 'mass'|| qty.kind() == 'volume') || qty.isUnitless()) 
-      {
-        qtys.push(qty);
-      }
-    }
-    catch{}
     i++;
   }
-  
-  return ingrs.length > 0 ? {
+  return ingr != null ? {
     list: listing,
-    qtys: qtys,
-    ingrs: ingrs
+    qty: quantity,
+    unit: unit,
+    ingr: ingr
   } : null;
 }
 

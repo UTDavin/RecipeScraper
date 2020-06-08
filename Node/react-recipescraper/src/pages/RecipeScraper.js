@@ -72,6 +72,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const unitsLookup = {}
+const ingredientsLookup = {}
 
 const API = process.env.REACT_APP_API || 'http://localhost:3001';
 
@@ -106,6 +107,8 @@ reset = () => {
 }
 
 scrapeUrl = async (value) => {
+  await this.initializeUnits();
+  await this.initializeIngredients();
   fetch(`${API}/scrape/?url=${encodeURI(value.url)}`)
   .then(response => 
     {
@@ -113,25 +116,39 @@ scrapeUrl = async (value) => {
     })
     .then(data => 
     {
-      //var ingredients=[];
-      //console.log(data.recipe);
-      //data.recipe.forEach(o => {
-      //  ingredients.push({qtys: Qty(o.qtys).toFloat(), units: Qty(o.qtys).units(), ingrs:o.ingrs, list:o.list})
-      //});
-      //ingredients.forEach( e => console.log(e))
       this.setState({url: value.url, data: data.recipe});
     });
 }
 
-getUnits = async () => await fetch(`${API}/units`)
-.then(response => 
+initializeUnits = async () => {
+  if(Object.keys(unitsLookup).length === 0)
   {
-    return response.json();
-  })
-  .then(data => 
+    fetch(`${API}/units`)
+    .then(response => 
+      {
+        return response.json();
+      })
+      .then(data => 
+      {
+        Object.assign(unitsLookup, data.units);
+      })
+  }
+};
+
+initializeIngredients = async () => {
+  if(Object.keys(ingredientsLookup).length === 0)
   {
-    return data.units;
-  });
+    fetch(`${API}/ingredients`)
+    .then(response => 
+      {
+        return response.json();
+      })
+      .then(data => 
+      {
+        Object.assign(ingredientsLookup, data.ingredients);
+      })
+  }
+};
 
 render() {
   return (
@@ -181,7 +198,7 @@ render() {
                 pageSize: 10
               }}
               title="Recipe"
-              columns={[{title:"Quantity", field:"qtys"}/*, {unit:"Unit", field:"units"}*/, {title:"Ingredient", field:"ingrs"}, {title:"Listing", field:"list"}]}
+              columns={[{title:"Quantity", field:"qty", type:"numeric"}, {title:"Unit", field:"unit", lookup: unitsLookup}, {title:"Ingredient", field:"ingr"}, {title:"Original Listing", field:"list", readonly: true}]}
               icons = {tableIcons}
               data={this.state.data}
               editable={{
