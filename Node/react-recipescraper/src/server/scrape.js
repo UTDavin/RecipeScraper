@@ -4,7 +4,11 @@ var cheerio = require('cheerio');
 var Qty = require('js-quantities');
 const fetch = require("node-fetch");
 const fs = require('fs');
-
+const si = require('search-index');
+const memdown = require('memdown');
+const encode = require('encoding-down');
+const levelup = require('levelup');
+const fii = require('fergies-inverted-index');
 //https://world.openfoodfacts.org/ingredients.json
 //TODO: look at wikidata and other open-source ingredient collection alternatives
 const ingr_set = {};
@@ -85,15 +89,43 @@ const initializeUnits = () => {
 
 class Scraper {
 
-static async getIngredients()
+static async getIngredients(strQuery, top)
 {
   await initializeIngredients();
-  var ret = {};
-  for(var key in ingr_set){
-    ret[ingr_set[key]] = key;
-    if(Object.keys(ret).length >= 20) break;
-  }
-  return ret;
+  let entries = Object.keys(ingr_set).map(m => {return {name: m}});
+  return await this.queryIngredients(entries, strQuery);
+}
+
+static async queryIngredients(entries, strQuery)
+{
+  let ret = {};
+  return new Promise((resolve, reject) => {
+    levelup(encode(memdown('myDB'), {
+      valueEncoding: 'json'
+    }), (err, store) => {
+      if (err)
+      {
+        console.log(err);
+        reject(ret);
+      }
+      let db = si({
+        fii: fii({ store: store })
+      });
+      // db is now available
+      db.PUT(entries).then(res =>
+      {
+        db.DICTIONARY('name.' + strQuery).then(data => {
+          let index=0;
+          data.forEach(o => 
+          {
+            console.log(o);
+            ret[index++]=o;
+          });
+          resolve(ret);
+        });
+      });
+    });
+  });
 }
 
 static getUnits() //returns a lookup where key = index, value = unit name
@@ -230,7 +262,7 @@ static processIngredient(listing)
         if(candidate in ingr_set)
         {
           ingrMatch = true;
-          ingr=ingr_set[candidate]; //use lookup identifier
+          ingr=candidate; //use ingr name
           break;
         }
         end--;

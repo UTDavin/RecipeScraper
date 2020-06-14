@@ -198,7 +198,7 @@ render() {
                 pageSize: 10
               }}
               title="Recipe"
-              columns={[{title:"Quantity", field:"qty", type:"numeric"}, {title:"Unit", field:"unit", lookup: unitsLookup}, {title:"Ingredient", field:"ingr"}, {title:"Original Listing", field:"list", readonly: true}]}
+              columns={[{title:"Quantity", field:"qty", type:"numeric"}, {title:"Unit", field:"unit", lookup: unitsLookup}, {title:"Ingredient", field:"ingr", lookup: ingredientsLookup}, {title:"Original Listing", field:"list", readonly: true}]}
               icons = {tableIcons}
               data={this.state.data}
               editable={{

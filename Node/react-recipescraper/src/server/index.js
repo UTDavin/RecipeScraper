@@ -53,7 +53,10 @@ app.get('/scrape', async function (req, res)
 
 app.get('/ingredients', async function (req, res)
 {
-  var ingredients = await Scraper.getIngredients();
+  var strQuery = req.query.startsWith;
+  var top = req.query.top;
+  var ingredients = await Scraper.getIngredients(strQuery, top);
+  console.log("ingredients: " + ingredients);
   res.send({ingredients: ingredients});
 })
 
