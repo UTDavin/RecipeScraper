@@ -46,7 +46,7 @@ export default function AutoCompleteForm(props){
             getOptionSelected = {(option, value) => {return typeof option === 'string' ? option == value: option[label] == value[label]}}
             options={options}
             getOptionLabel={option => typeof option === 'string' ? option : option[label]}
-            onChange={(event, value) => setValue(value)}
+            onChange={(event, value) => {props.onChange(value); setValue(value);}}
             renderInput={params => (
             <TextField
               {...params}

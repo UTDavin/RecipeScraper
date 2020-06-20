@@ -89,13 +89,12 @@ class Scraper {
 static async getIngredients(strQuery, top)
 {
   await initializeIngredients();
-  let entries = Array.from(ingr_set).map(m => {return {name: m}});
-  return await this.queryIngredients(entries, strQuery);
+  return await this.queryIngredients(strQuery);
 }
 
-static async queryIngredients(entries, strQuery)
+static async queryIngredients(strQuery)
 {
-  console.log("searching for: " + strQuery);
+  let entries = Array.from(ingr_set).map(m => {return {name: m}});
   let ret = [];
   var idx = lunr(function () {
     this.ref('name')
@@ -106,7 +105,7 @@ static async queryIngredients(entries, strQuery)
   });
   let results = idx.search("name:"+strQuery+"*");
   results.forEach(r => {
-    ret.push({name:r.ref});
+    ret.push(r.ref);
   });
   return ret;
 }

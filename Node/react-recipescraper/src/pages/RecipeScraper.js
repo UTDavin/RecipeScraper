@@ -32,7 +32,6 @@ import Remove from '@material-ui/icons/Remove';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
-import Autocomplete from '@material-ui/lab/Autocomplete';
 import AutoCompleteForm from '../components/AutoCompleteForm';
 
 const API = process.env.REACT_APP_API || 'http://localhost:3001';
@@ -178,9 +177,8 @@ render() {
                         {title:"Unit", field:"unit", lookup: unitsLookup}, 
                         {title:"Ingredient", field:"ingr", editComponent: props => 
                           <AutoCompleteForm input={props.value}
-                                            label="name"
                                             options={ingredientsLookup}
-                                            onChange={(e,v) => props.onChange(v)}
+                                            onChange={(value) => props.onChange(value)}
                           />
                         }, 
                         {title:"Original Listing", field:"list", readonly: true}]}
