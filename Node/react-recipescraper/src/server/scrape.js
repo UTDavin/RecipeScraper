@@ -4,17 +4,14 @@ var cheerio = require('cheerio');
 var Qty = require('js-quantities');
 const fetch = require("node-fetch");
 const fs = require('fs');
-const si = require('search-index');
-const memdown = require('memdown');
-const encode = require('encoding-down');
-const levelup = require('levelup');
-const fii = require('fergies-inverted-index');
+const lunr = require('lunr');
+
 //https://world.openfoodfacts.org/ingredients.json
 //TODO: look at wikidata and other open-source ingredient collection alternatives
-const ingr_set = {};
+const ingr_set = new Set();
 const omitted_entries = new Set(["a", "and"]);
 const initializeIngredients = async () => {
-  if(Object.keys(ingr_set).length == 0) 
+  if(ingr_set.size == 0) 
   {
     let loaded=false;
     let ingredients;
@@ -53,7 +50,7 @@ const initializeIngredients = async () => {
         let name = item.name.replace(/-/g," ").trim().toLowerCase(); //replace - w/ space, clean up entry;
         if(!name.includes(":") && name.length > 0 && !omitted_entries.has(name)) //omit localized entries
         {
-          ingr_set[name] = index++;
+          ingr_set.add(name);
         }
       });
     }
@@ -92,42 +89,26 @@ class Scraper {
 static async getIngredients(strQuery, top)
 {
   await initializeIngredients();
-  let entries = Object.keys(ingr_set).map(m => {return {name: m}});
-  console.log("searching for: " + strQuery)
+  let entries = Array.from(ingr_set).map(m => {return {name: m}});
   return await this.queryIngredients(entries, strQuery);
 }
 
 static async queryIngredients(entries, strQuery)
 {
+  console.log("searching for: " + strQuery);
   let ret = [];
-  return new Promise((resolve, reject) => {
-    if(strQuery.length == 0) resolve(ret);
-    levelup(encode(memdown('myDB'), {
-      valueEncoding: 'json'
-    }), (err, store) => {
-      if (err)
-      {
-        console.log(err);
-        reject(ret);
-      }
-      let db = si({
-        fii: fii({ store: store })
-      });
-      // db is now available
-      db.PUT(entries).then(res =>
-      {
-        db.DICTIONARY('name.' + strQuery).then(data => {
-          db.SEARCH(db.OR(...data)).then(data => {
-            data.forEach(p => 
-            {
-              ret.push(p.obj);
-            });
-            resolve(ret);
-          });
-        });
-      });
-    });
+  var idx = lunr(function () {
+    this.ref('name')
+    this.field('name')
+    entries.forEach(function (doc) {
+      this.add(doc)
+    }, this)
   });
+  let results = idx.search("name:"+strQuery+"*");
+  results.forEach(r => {
+    ret.push({name:r.ref});
+  });
+  return ret;
 }
 
 static getUnits() //returns a lookup where key = index, value = unit name
@@ -261,7 +242,7 @@ static processIngredient(listing)
       {
         let slice = tokens.slice(i, end);
         let candidate = slice.join(' ');
-        if(candidate in ingr_set)
+        if(ingr_set.has(candidate))
         {
           ingrMatch = true;
           ingr=candidate; //use ingr name
