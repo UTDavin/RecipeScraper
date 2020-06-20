@@ -33,7 +33,6 @@ export default function AutoCompleteForm(props){
 
   const handleIngrInputChange = async (event, value) => {  
     await searchAPIDebounced(value);
-    setInputValue(value);
   }
 
   return (<Autocomplete
@@ -46,7 +45,7 @@ export default function AutoCompleteForm(props){
             getOptionSelected = {(option, value) => {return typeof option === 'string' ? option == value: option[label] == value[label]}}
             options={options}
             getOptionLabel={option => typeof option === 'string' ? option : option[label]}
-            onChange={(event, value) => {props.onChange(value); setValue(value);}}
+            onChange={(event, value) => {props.onChange(value); setInputValue(value); setValue(value);}}
             renderInput={params => (
             <TextField
               {...params}
