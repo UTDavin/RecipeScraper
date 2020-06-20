@@ -93,13 +93,15 @@ static async getIngredients(strQuery, top)
 {
   await initializeIngredients();
   let entries = Object.keys(ingr_set).map(m => {return {name: m}});
+  console.log("searching for: " + strQuery)
   return await this.queryIngredients(entries, strQuery);
 }
 
 static async queryIngredients(entries, strQuery)
 {
-  let ret = {};
+  let ret = [];
   return new Promise((resolve, reject) => {
+    if(strQuery.length == 0) resolve(ret);
     levelup(encode(memdown('myDB'), {
       valueEncoding: 'json'
     }), (err, store) => {
@@ -115,13 +117,13 @@ static async queryIngredients(entries, strQuery)
       db.PUT(entries).then(res =>
       {
         db.DICTIONARY('name.' + strQuery).then(data => {
-          let index=0;
-          data.forEach(o => 
-          {
-            console.log(o);
-            ret[index++]=o;
+          db.SEARCH(db.OR(...data)).then(data => {
+            data.forEach(p => 
+            {
+              ret.push(p.obj);
+            });
+            resolve(ret);
           });
-          resolve(ret);
         });
       });
     });

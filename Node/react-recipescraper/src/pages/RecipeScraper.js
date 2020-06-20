@@ -2,12 +2,7 @@ import React, {Component, Fragment} from 'react';
 import RestaurantMenuIcon from '@material-ui/icons/RestaurantMenu';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
 import Button from '@material-ui/core/Button';
 import Toolbar from '@material-ui/core/Toolbar';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -19,7 +14,6 @@ import {
 } from '@material-ui/core';
 import { Form, Field } from 'react-final-form';
 import MaterialTable from 'material-table';
-
 
 import { forwardRef } from 'react';
 
@@ -38,9 +32,10 @@ import Remove from '@material-ui/icons/Remove';
 import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
+import Autocomplete from '@material-ui/lab/Autocomplete';
+import AutoCompleteForm from '../components/AutoCompleteForm';
 
-var Qty = require('js-quantities');
-
+const API = process.env.REACT_APP_API || 'http://localhost:3001';
 
 const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -72,10 +67,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const unitsLookup = {}
-const ingredientsLookup = {}
-
-const API = process.env.REACT_APP_API || 'http://localhost:3001';
-
+const ingredientsLookup = []
 class recipeScraper extends Component {
 
 state = {
@@ -108,7 +100,6 @@ reset = () => {
 
 scrapeUrl = async (value) => {
   await this.initializeUnits();
-  await this.initializeIngredients();
   fetch(`${API}/scrape/?url=${encodeURI(value.url)}`)
   .then(response => 
     {
@@ -135,21 +126,6 @@ initializeUnits = async () => {
   }
 };
 
-initializeIngredients = async () => {
-  if(Object.keys(ingredientsLookup).length === 0)
-  {
-    fetch(`${API}/ingredients`)
-    .then(response => 
-      {
-        return response.json();
-      })
-      .then(data => 
-      {
-        Object.assign(ingredientsLookup, data.ingredients);
-      })
-  }
-};
-
 render() {
   return (
     <Fragment>
@@ -169,7 +145,7 @@ render() {
           </Form>
           </>
         ) : (
-          <Paper style={{width:'60%'}}>
+          <Paper style={{width:'80%'}}>
             <Toolbar>
               <div style={{flex: 1}}/>
               <Button
@@ -198,7 +174,16 @@ render() {
                 pageSize: 10
               }}
               title="Recipe"
-              columns={[{title:"Quantity", field:"qty", type:"numeric"}, {title:"Unit", field:"unit", lookup: unitsLookup}, {title:"Ingredient", field:"ingr", lookup: ingredientsLookup}, {title:"Original Listing", field:"list", readonly: true}]}
+              columns={[{title:"Quantity", field:"qty", type:"numeric"}, 
+                        {title:"Unit", field:"unit", lookup: unitsLookup}, 
+                        {title:"Ingredient", field:"ingr", editComponent: props => 
+                          <AutoCompleteForm input={props.value}
+                                            label="name"
+                                            options={ingredientsLookup}
+                                            onChange={(e,v) => props.onChange(v)}
+                          />
+                        }, 
+                        {title:"Original Listing", field:"list", readonly: true}]}
               icons = {tableIcons}
               data={this.state.data}
               editable={{
