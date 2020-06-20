@@ -10,6 +10,7 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "awesome-debounce-promise": "^2.1.0",
     "body-parser": "1.18.3",
     "cheerio": "^1.0.0-rc.3",
     "cors": "2.8.4",
@@ -28,6 +29,7 @@
     "node-fetch": "^2.6.0",
     "numeric-quantity": "^0.5.1",
     "react": "^16.13.1",
+    "react-async-hook": "^3.6.1",
     "react-dom": "^16.13.1",
     "react-final-form": "6.3.0",
     "react-router-dom": "5.1.2",
@@ -36,6 +38,7 @@
     "search-index": "^1.0.6",
     "sequelize": "4.44.3",
     "sqlite3": "4.1.0",
+    "use-constant": "^1.0.0",
     "uuid": "3.3.2"
   },
   "resolutions": {
