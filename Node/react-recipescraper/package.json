@@ -20,7 +20,7 @@
     "final-form": "4.18.5",
     "js-quantities": "^1.7.5",
     "level": "^6.0.1",
-    "lodash": "4.17.10",
+    "lodash": "4.17.19",
     "lunr": "^2.3.8",
     "material-table": "^1.58.2",
     "moment": "2.22.2",
