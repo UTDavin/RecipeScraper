@@ -23,7 +23,7 @@
     "lodash": "4.17.10",
     "lunr": "^2.3.8",
     "material-table": "^1.58.2",
-    "moment": "2.22.2",
+    "moment": "2.29.4",
     "needle": "2.3.0",
     "node-fetch": "^2.6.0",
     "numeric-quantity": "^0.5.1",
